@@ -10,3 +10,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Data
+*.json
+*.pkz
