@@ -1,11 +1,13 @@
-import sys
 import argparse
-from typing import Sequence
+import json
 import logging
+import sys
+from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 
 import joblib
-
+from pandas import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,49 @@ def load_model(model_path: Path):
 
     model = joblib.load(model_path)
     return model
+
+
+def save_artifacts(
+    model,
+    metrics: dict[str, float],
+    feature_names: list[str],
+    hyperparameters: dict[str, object],
+    model_path: Path,
+    metrics_path: Path | None = None,
+) -> None:
+    """Save trained model pickle and metadata/metrics JSON."""
+    from sklearn import __version__ as sklearn_version
+
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    logger.info("Serializing model artifact to %s...", model_path)
+    joblib.dump(model, model_path)
+
+    if metrics_path is not None:
+        metrics_path.parent.mkdir(parents=True, exist_ok=True)
+        metadata = {
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+            "sklearn_version": sklearn_version,
+            "model_type": model.__class__.__name__,
+            "hyperparameters": hyperparameters,
+            "feature_names": feature_names,
+            "metrics": metrics,
+        }
+        logger.info("Exporting metrics and metadata to %s...", metrics_path)
+        with open(metrics_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
+
+
+def verify_saved_model(model_path: Path, sample_features: DataFrame) -> None:
+    """Smoke test to verify that the saved model artifact can be reloaded and run predictions."""
+    logger.info("Verifying saved model artifact by reloading from %s...", model_path)
+    loaded_model = load_model(model_path=model_path)
+    sample = sample_features.head(1)
+    prediction = loaded_model.predict(sample)
+    logger.info(
+        "Verification successful. Sample prediction shape: %s, output value: %s",
+        prediction.shape,
+        prediction[0],
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> None:
