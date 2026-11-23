@@ -17,14 +17,12 @@ from pathlib import Path
 
 from house_price_mlops.model import save_artifacts, verify_saved_model
 
-# Ensure src/ is on sys.path when running script directly
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from sklearn.ensemble import RandomForestRegressor
 
 from house_price_mlops.data import load_data, split_data
 from house_price_mlops.evaluation import evaluate_model
-from house_price_mlops.model import load_model
 from house_price_mlops.training import train_model
 
 logger = logging.getLogger(__name__)

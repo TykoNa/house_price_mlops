@@ -18,6 +18,12 @@ dependencies = [
     "uvicorn[standard]>=0.54.0",
 ]
 
+[tool.pyrefly]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]
+
 [project.scripts]
 house-price-mlops = "house_price_mlops:main"
 
@@ -29,5 +35,7 @@ build-backend = "uv_build"
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
     "ruff>=0.17.4",
+    "types-pyyaml>=6.0.12.20261122",
 ]

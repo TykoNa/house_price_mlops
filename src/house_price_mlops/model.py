@@ -39,8 +39,19 @@ def load_model(model_path: Path):
     if not model_path.exists():
         raise FileNotFoundError(f"Model not found in {model_path}!")
 
-    model = joblib.load(model_path)
-    return model
+    try:
+        return joblib.load(model_path)
+    except Exception as exc:
+        raise ValueError(
+            f"Failed to deserialize model from {model_path}: file is corrupted "
+            f"or not a valid joblib artifact ({type(exc).__name__}: {exc})"
+        ) from exc
+
+
+def save_model(model, model_path: Path):
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    logger.info("Serializing model artifact to %s...", model_path)
+    joblib.dump(model, model_path)
 
 
 def save_artifacts(
@@ -53,10 +64,6 @@ def save_artifacts(
 ) -> None:
     """Save trained model pickle and metadata/metrics JSON."""
     from sklearn import __version__ as sklearn_version
-
-    model_path.parent.mkdir(parents=True, exist_ok=True)
-    logger.info("Serializing model artifact to %s...", model_path)
-    joblib.dump(model, model_path)
 
     if metrics_path is not None:
         metrics_path.parent.mkdir(parents=True, exist_ok=True)
@@ -93,8 +100,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     try:
         load_model(model_path=args.model_path)
         logger.info("Model loaded successfully.")
-    except Exception as e:
-        logger.exception(f"Model loading failed with an error: \n {e}")
+    except Exception:
+        logger.exception("Model loading failed.")
         sys.exit(1)
 
 
