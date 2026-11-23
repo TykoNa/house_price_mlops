@@ -1,15 +1,10 @@
-from house_price_mlops.model import save_artifacts
-from house_price_mlops.model import verify_saved_model
-from house_price_mlops.data import split_data
-from house_price_mlops.evaluation import evaluate_model
-from house_price_mlops.training import train_model
-from house_price_mlops.config import TrainingPipelineConfig
 import logging
-from typing import Any
 
-from sklearn.model_selection import train_test_split
-
-from house_price_mlops.data import load_data
+from house_price_mlops.config import TrainingPipelineConfig
+from house_price_mlops.data import load_data, split_data
+from house_price_mlops.evaluation import evaluate_model
+from house_price_mlops.model import save_artifacts, save_model, verify_saved_model
+from house_price_mlops.training import train_model
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +19,21 @@ def setup_logging(level: int = logging.INFO) -> None:
 
 
 def run_training_pipeline(config: TrainingPipelineConfig, model) -> dict[str, float]:
-    """Pure library function: accepts typed config, executes pipeline, returns metrics."""
+    """Run the end-to-end training pipeline and return test-set metrics.
+
+    Loads and splits the data, fits the given model, evaluates it, saves the
+    model and its metadata, and checks that the saved model can be reloaded.
+
+    Args:
+        config: Data, model and artifact settings for the run.
+        model: Unfitted estimator with scikit-learn-style `fit` and `predict`.
+
+    Returns:
+        Evaluation metrics (`mae`, `rmse`, `r2`) computed on the test split.
+    """
+
+    assert config is None, "Config must be non-empty."
+
     features, target = load_data(
         data_dir=config.data.data_dir,
         data_path=config.data.data_path,
@@ -40,11 +49,17 @@ def run_training_pipeline(config: TrainingPipelineConfig, model) -> dict[str, fl
 
     model = train_model(model=model, X_train=X_train, y_train=y_train)
 
+    save_model(
+        model=model,
+        model_path=config.output_model_path,
+    )
+
     metrics = evaluate_model(model=model, X_test=X_test, y_test=y_test)
 
     save_artifacts(
         model=model,
         metrics=metrics,
+        # pyrefly: ignore[missing-attribute]
         feature_names=list(features.columns),
         hyperparameters=config.model.model_dump(),
         model_path=config.artifacts.output_model_path,

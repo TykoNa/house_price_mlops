@@ -53,6 +53,7 @@ def load_data(
     if data_path is not None:
         if not data_path.is_file():
             raise FileNotFoundError(f"Dataset file not found at: {data_path}")
+
         logger.info("Loading dataset from custom path: %s", data_path)
         if data_path.suffix.lower() == ".parquet":
             df = pd.read_parquet(data_path)
@@ -67,6 +68,7 @@ def load_data(
             )
         features = df.drop(columns=[target_col])
         target = df[target_col]
+
     else:
         logger.info("Fetching California housing dataset (data_home=%s)...", data_dir)
         if data_dir is not None:
@@ -75,7 +77,9 @@ def load_data(
             data_home=str(data_dir) if data_dir else None,
             as_frame=True,
         )
+        # pyrefly: ignore[missing-attribute]
         features = dataset.data
+        # pyrefly: ignore[missing-attribute]
         target = dataset.target
 
     logger.info(
