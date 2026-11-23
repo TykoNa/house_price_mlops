@@ -1,0 +1,13 @@
+name: Typechecker
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pyrefly-org/pyrefly@main
+      
